@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { C } from '../constants/theme';
 import { Badge } from '../components/Primitives';
 import { BtnPrimary } from '../components/Buttons';
@@ -13,6 +13,20 @@ export default function AppPage({ user, setUser, setPage }) {
   const [tab, setTab] = useState("generate");
   const [history, setHistory] = useState([]);
   const [toast, setToast] = useState({ show: false, msg: "" });
+
+  useEffect(() => {
+    const userId = user?.id || 'guest';
+    fetch(`http://localhost:8083/api/content/history?userId=${userId}`)
+      .then(res => res.json())
+      .then(data => {
+        setHistory(data.map(item => ({
+          ...item,
+          ts: item.createdAt ? new Date(item.createdAt) : new Date(),
+          prompt: item.prompt || item.topic, // mapped for history page
+        })));
+      })
+      .catch(err => console.error("Failed to load history:", err));
+  }, [user]);
 
   // Shared state to allow history → generate prefill
   const [sharedPrompt, setSharedPrompt] = useState("");

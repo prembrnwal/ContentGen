@@ -35,15 +35,29 @@ export default function HistoryPage({ history, setHistory, setPrompt, setTemplat
     showToast("Prompt loaded — ready to generate");
   }
 
-  function deleteItem(id) {
-    setHistory(h => h.filter(x => x.id !== id));
-    showToast("Deleted from history");
+  async function deleteItem(id) {
+    try {
+      await fetch(`http://localhost:8083/api/content/${id}`, { method: 'DELETE' });
+      setHistory(h => h.filter(x => x.id !== id));
+      showToast("Deleted from history");
+    } catch (err) {
+      console.error(err);
+      showToast("Failed to delete content");
+    }
   }
 
-  function clearAll() {
+  async function clearAll() {
     if (window.confirm("Clear all history? This cannot be undone.")) {
-      setHistory([]);
-      showToast("History cleared");
+      try {
+        for (const item of history) {
+          await fetch(`http://localhost:8083/api/content/${item.id}`, { method: 'DELETE' });
+        }
+        setHistory([]);
+        showToast("History cleared");
+      } catch (err) {
+        console.error(err);
+        showToast("Failed to clear history");
+      }
     }
   }
 

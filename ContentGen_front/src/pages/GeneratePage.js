@@ -89,40 +89,30 @@ export default function GeneratePage({
     if (!p.trim()) { setValidErr(true); return; }
     setValidErr(false); setLoading(true); setScorePcts({}); setOutputs([]);
 
-    const sys = `You are a professional content assistant. Return ONLY valid JSON, no markdown, no preamble.
-When numberOfIdeas > 1, return a JSON array of that many idea objects.
-When numberOfIdeas === 1, return a single JSON object (not wrapped in an array).
-Each idea object must match this exact shape:
-{"title":"string","introduction":"2-3 sentences","keyPoints":["string","string","string","string"],"conclusion":"2 sentences","keywords":["word1","word2","word3","word4","word5"],"qualityScore":number_60_to_98}`;
-
-    const userMsg = `Generate ${numIdeas} ${tmpl} content idea${numIdeas > 1 ? "s" : ""}.
-Topic: "${p}"
-Tone: ${tn}
-Platform: ${plt}
-Target audience: ${aud}
-Number of ideas: ${numIdeas}`;
-
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch("http://localhost:8083/api/content/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: numIdeas > 1 ? 4000 : 1000,
-          system: sys,
-          messages: [{ role: "user", content: userMsg }],
+          topic: p,
+          template: tmpl,
+          tone: tn,
+          platform: plt,
+          audience: aud,
+          numberOfIdeas: numIdeas
         }),
       });
-      const data = await res.json();
-      const raw = data.content.map(i => i.text || "").join("");
-      let parsed = JSON.parse(raw.replace(/```json|```/g, "").trim());
-      if (!Array.isArray(parsed)) parsed = [parsed];
+      
+      if (!res.ok) {
+        throw new Error("Failed to generate content");
+      }
+      
+      const parsed = await res.json();
 
       const entries = parsed.map((idea, idx) => ({
         ...idea,
-        topic: p, template: tmpl, tone: tn, platform: plt, audience: aud,
-        numberOfIdeas: numIdeas, ideaIndex: idx + 1,
-        ts: new Date(), id: Date.now() + idx,
+        ts: idea.ts ? new Date(idea.ts) : new Date(),
+        id: idea.id || Date.now() + idx,
       }));
 
       setOutputs(entries);

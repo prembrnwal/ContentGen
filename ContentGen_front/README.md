@@ -50,7 +50,7 @@ npm install
 npm start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open [http://localhost:5000](http://localhost:5000) in your browser.
 
 ### Building for Production
 
